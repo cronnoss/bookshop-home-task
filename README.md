@@ -1,4 +1,14 @@
+![Github CI/CD](https://github.com/cronnoss/bookshop-home-task/actions/workflows/go.yml/badge.svg)
 [![Go Report](https://goreportcard.com/badge/github.com/cronnoss/bookshop-home-task)](https://goreportcard.com/report/github.com/cronnoss/bookshop-home-task)
+![Repository Top Language](https://img.shields.io/github/languages/top/cronnoss/bookshop-home-task.svg)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/cronnoss/bookshop-home-task/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/cronnoss/bookshop-home-task/?branch=main)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/cronnoss/bookshop-home-task.svg)
+![Repository Size](https://img.shields.io/github/repo-size/cronnoss/bookshop-home-task?style=flat-square)
+![GitHub Open Issues](https://img.shields.io/github/issues/cronnoss/bookshop-home-task.svg)
+[![codecov](https://codecov.io/github/cronnoss/bookshop-home-task/graph/badge.svg?token=LJZX10ZCY9)](https://codecov.io/github/cronnoss/bookshop-home-task)
+![License](https://img.shields.io/badge/license-MIT-green)
+![GitHub last commit](https://img.shields.io/github/last-commit/cronnoss/bookshop-home-task.svg)
+![GitHub contributors](https://img.shields.io/github/contributors/cronnoss/bookshop-home-task.svg)
 
 # Book Shop API
 
