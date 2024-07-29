@@ -34,9 +34,9 @@ type UserClaims struct {
 // GenerateToken generates a token.
 func (s TokenService) GenerateToken(user domain.User) (string, error) {
 	payload := UserClaims{
-		UserID:   user.ID(),
-		UserName: user.Username(),
-		Admin:    user.Admin(),
+		UserID:   user.ID,
+		UserName: user.Username,
+		Admin:    user.Admin,
 		StandardClaims: jwt.StandardClaims{
 			IssuedAt:  time.Now().Unix(),
 			ExpiresAt: time.Now().Add(time.Minute * 15).Unix(),

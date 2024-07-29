@@ -58,7 +58,7 @@ func (h HTTPServer) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !checkPasswordHash(authRequest.Password, user.Password()) {
+	if !checkPasswordHash(authRequest.Password, user.Password) {
 		server.BadRequest("invalid-password", nil, w, r)
 		return
 	}

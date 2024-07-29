@@ -45,10 +45,10 @@ func categoryToDomain(category models.Category) (domain.Category, error) {
 
 func domainToUser(user domain.User) models.User {
 	return models.User{
-		ID:       user.ID(),
-		Username: user.Username(),
-		Password: user.Password(),
-		Admin:    user.Admin(),
+		ID:       user.ID,
+		Username: user.Username,
+		Password: user.Password,
+		Admin:    user.Admin,
 	}
 }
 

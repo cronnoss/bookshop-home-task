@@ -20,13 +20,13 @@ func (h HTTPServer) UpdateCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.userService.GetUserByID(r.Context(), user.ID())
+	_, err = h.userService.GetUserByID(r.Context(), user.ID)
 	if err != nil {
 		server.RespondWithError(err, w, r)
 		return
 	}
 
-	cart, err := toDomainCart(user.ID(), cartRequest)
+	cart, err := toDomainCart(user.ID, cartRequest)
 	if err != nil {
 		server.RespondWithError(err, w, r)
 		return
@@ -50,7 +50,7 @@ func (h HTTPServer) Checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.cartService.Checkout(r.Context(), user.ID())
+	err = h.cartService.Checkout(r.Context(), user.ID)
 	if err != nil {
 		server.RespondWithError(err, w, r)
 		return

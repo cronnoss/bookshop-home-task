@@ -22,11 +22,11 @@ func (h HTTPServer) CheckAdmin(next http.HandlerFunc) http.HandlerFunc {
 			server.BadRequest("validate-token", err, w, r)
 			return
 		}
-		if user.Username() == "" {
+		if user.Username == "" {
 			server.InternalError("invalid-token", nil, w, r)
 			return
 		}
-		if !user.Admin() {
+		if !user.Admin {
 			server.Unauthorised("not-admin", nil, w, r)
 			return
 		}
@@ -44,7 +44,7 @@ func (h HTTPServer) CheckAuthorizedUser(next http.HandlerFunc) http.HandlerFunc 
 			server.BadRequest("validate-token", err, w, r)
 			return
 		}
-		if user.Username() == "" {
+		if user.Username == "" {
 			server.InternalError("invalid-token", nil, w, r)
 			return
 		}
