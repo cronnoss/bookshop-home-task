@@ -1,3 +1,4 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/bf381a805bd34d95b9506f01a0113b66)](https://app.codacy.com/gh/cronnoss/bookshop-home-task?utm_source=github.com&utm_medium=referral&utm_content=cronnoss/bookshop-home-task&utm_campaign=Badge_Grade)
 [![Go Report](https://goreportcard.com/badge/github.com/cronnoss/bookshop-home-task)](https://goreportcard.com/report/github.com/cronnoss/bookshop-home-task)
 
 # Book Shop API
