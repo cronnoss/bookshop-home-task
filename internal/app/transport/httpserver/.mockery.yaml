@@ -1,0 +1,11 @@
+with-expecter: true
+dir: "mocks"
+outpkg: "mocks"
+mockname: "{{.InterfaceNameCamel}}"
+filename: "{{.InterfaceNameSnake}}_mock.go"
+packages:
+  github.com/cronnoss/bookshop-home-task/internal/app/transport/httpserver:
+    interfaces:
+      BookService:
+
+

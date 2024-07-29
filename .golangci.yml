@@ -1,0 +1,117 @@
+run:
+  tests: true
+  build-tags:
+    - bench
+    - !bench
+
+linters-settings:
+  funlen:
+    lines: 150
+    statements: 80
+  depguard:
+    rules:
+      main:
+        allow:
+          - github.com/jmoiron/sqlx
+          - errors
+          - io
+          - fmt
+          - os
+          - strings
+          - sync
+          - context
+          - net/http
+          - syscall
+          - time
+          - net
+          - flag
+          - bytes
+          - testing
+          - log
+          - strconv
+          - path/filepath
+          - github.com/golang-jwt/jwt
+          - github.com/davecgh/go-spew/spew
+          - github.com/uptrace/bun
+          - database/sql
+          - encoding/json
+          - github.com/gorilla/mux
+          - github.com/golang-migrate/migrate/v4
+          - github.com/golang-migrate/migrate/v4/source/file
+          - github.com/golang-migrate/migrate/v4/database/postgres
+          - github.com/cronnoss/bookshop-home-task/internal/app/domain
+          - github.com/cronnoss/bookshop-home-task/internal/app/repository/models
+          - github.com/cronnoss/bookshop-home-task/internal/app/common/server
+          - github.com/cronnoss/bookshop-home-task/internal/app/transport/httpserver
+          - github.com/cronnoss/bookshop-home-task/internal/app/services
+          - github.com/cronnoss/bookshop-home-task/internal/pkg/pg
+          - github.com/cronnoss/bookshop-home-task/internal/app/repository/pgrepo
+          - github.com/cronnoss/bookshop-home-task/internal/app/config
+          - github.com/cronnoss/bookshop-home-task/internal/app/common/slugerrors
+          - github.com/stretchr/testify/require
+          - github.com/stretchr/testify/mock
+          - golang.org/x/crypto/bcrypt
+
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - dupl
+        - gocyclo
+        - gosec
+    - path: internal/app/transport/httpserver/book_handlers\.go
+      linters:
+        - dupl
+    - path: internal/app/transport/httpserver/category_handlers\.go
+      linters:
+        - dupl
+
+linters:
+  disable-all: true
+  enable:
+    - asciicheck
+    - depguard
+    - dogsled
+    - dupl
+    - bodyclose
+    - durationcheck
+    - errorlint
+    - exhaustive
+    - exportloopref
+    - funlen
+    - gci
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - gofmt
+    - gofumpt
+    - goheader
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - importas
+    - ineffassign
+    - lll
+    - makezero
+    - misspell
+    - nestif
+    - nilerr
+    - noctx
+    - nolintlint
+    - prealloc
+    - predeclared
+    - revive
+    - staticcheck
+    - stylecheck
+    - tagliatelle
+    - thelper
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
