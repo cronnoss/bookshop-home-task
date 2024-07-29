@@ -4,6 +4,7 @@
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/cronnoss/bookshop-home-task/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/cronnoss/bookshop-home-task/?branch=main)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/cronnoss/bookshop-home-task.svg)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/bf381a805bd34d95b9506f01a0113b66)](https://app.codacy.com/gh/cronnoss/bookshop-home-task?utm_source=github.com&utm_medium=referral&utm_content=cronnoss/bookshop-home-task&utm_campaign=Badge_Grade)
+[![Coverage Status](https://coveralls.io/repos/github/cronnoss/bookshop-home-task/badge.svg?branch=main)](https://coveralls.io/github/cronnoss/bookshop-home-task?branch=main)
 ![Repository Size](https://img.shields.io/github/repo-size/cronnoss/bookshop-home-task?style=flat-square)
 ![GitHub Open Issues](https://img.shields.io/github/issues/cronnoss/bookshop-home-task.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
