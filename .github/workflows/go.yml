@@ -32,7 +32,7 @@ jobs:
         fi
 
     - name: Build
-      run: go build -v cmd/*.go && go build -v cmd/tester/*.go
+      run: go build -v cmd/*.go
 
     - name: Test
       run: go test -v ./...
