@@ -1,3 +1,5 @@
+[![Go Report](https://goreportcard.com/badge/github.com/cronnoss/bookshop-home-task)](https://goreportcard.com/report/github.com/cronnoss/bookshop-home-task)
+
 # Book Shop API
 
 This is a simple bookshop REST API that allows users to browse books, put them in the cart, and purchase them (without actual payment processing).
