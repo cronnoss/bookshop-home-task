@@ -8,5 +8,7 @@ packages:
     interfaces:
       BookService:
       UserService:
-
+      TokenService:
+      CategoryService:
+      CartService:
 
