@@ -5,7 +5,7 @@ Green='\033[0;32m'
 Color_Off='\033[0m'
 
 help:
-	@echo ${Red}"Please select a subcommand"${Color_Off}
+	@echo ${Red}"Please select a subcommand:"${Color_Off}
 	@echo ${Green}"make run-postgres"${Color_Off}" to run postgres"
 	@echo ${Green}"make run"${Color_Off}" to run bookshop"
 	@echo

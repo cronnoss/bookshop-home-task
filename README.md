@@ -43,6 +43,7 @@ There are 3 permission levels:
 ## How to run
 - `make dc` runs docker-compose with the app container on port 8080 for you.
 - `make test` runs the tests
+- `make run-postgres` runs the postgres container locally on port 5433.
 - `make run` runs the app locally on port 8080 without docker.
 - `make lint` runs the linter
 
