@@ -50,9 +50,9 @@ linters-settings:
           - github.com/cronnoss/bookshop-home-task/internal/app/common/slugerrors
           - github.com/stretchr/testify/require
           - github.com/stretchr/testify/mock
+          - github.com/stretchr/testify/assert
           - github.com/golang/mock/gomock
           - golang.org/x/crypto/bcrypt
-
 
 issues:
   exclude-rules:

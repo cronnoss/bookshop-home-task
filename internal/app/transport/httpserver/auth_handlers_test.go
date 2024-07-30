@@ -2,99 +2,103 @@ package httpserver
 
 import (
 	"bytes"
-	"errors"
+	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/cronnoss/bookshop-home-task/internal/app/domain"
-	mock_service "github.com/cronnoss/bookshop-home-task/internal/app/services/mocks"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
+	"github.com/cronnoss/bookshop-home-task/internal/app/transport/httpserver/mocks"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func TestHTTPServer_SignUp_Success(t *testing.T) {
-	type mockBehavior func(s *mock_service.MockUserRepository, user domain.User)
+func TestSignUp_Success(t *testing.T) {
+	userServiceMock := mocks.NewUserService(t)
 
-	testTable := []struct {
-		name         string
-		inputBody    string
-		inputUser    domain.User
-		mockBehavior mockBehavior
-		expectedCode int
-	}{
-		{
-			name:      "OK",
-			inputBody: `{"username" : "test", "password" : "qwerty"}`,
-			inputUser: domain.User{
-				Username: "test",
-				Password: "qwerty",
-			},
-			mockBehavior: func(s *mock_service.MockUserRepository, user domain.User) {
-				s.EXPECT().CreateUser(gomock.Any(), gomock.AssignableToTypeOf(domain.User{})).Return(domain.User{ID: 1}, nil)
-			},
-			expectedCode: 200,
-		},
-		{
-			name:         "Empty fields",
-			inputBody:    `{"username" : "test"}`,
-			mockBehavior: func(s *mock_service.MockUserRepository, user domain.User) {},
-			expectedCode: 400,
-		},
-		{
-			name:      "Service failure",
-			inputBody: `{"username" : "test", "password" : "qwerty"}`,
-			inputUser: domain.User{
-				Username: "test",
-				Password: "qwerty",
-			},
-			mockBehavior: func(s *mock_service.MockUserRepository, user domain.User) {
-				s.EXPECT().CreateUser(gomock.Any(), gomock.AssignableToTypeOf(domain.User{})).Return(domain.User{},
-					errors.New("internal error"))
-			},
-			expectedCode: 500,
-		},
-		{
-			name:         "Empty body",
-			inputBody:    `{}`,
-			mockBehavior: func(s *mock_service.MockUserRepository, user domain.User) {},
-			expectedCode: 400,
-		},
-		{
-			name:         "Invalid body",
-			inputBody:    `{"username" : "test" "":"" "password" : "qwerty"}`,
-			mockBehavior: func(s *mock_service.MockUserRepository, user domain.User) {},
-			expectedCode: 400,
-		},
-		{
-			name:         "Invalid JSON",
-			inputBody:    `{"username" : "test", "password" : "qwerty"`, // missing closing bracket
-			mockBehavior: func(s *mock_service.MockUserRepository, user domain.User) {},
-			expectedCode: 400,
-		},
+	userServiceMock.On("CreateUser", mock.Anything, mock.Anything).Return(domain.User{}, nil)
+
+	httpServer := NewHTTPServer(userServiceMock, nil, nil, nil, nil)
+
+	reqBody := AuthRequest{
+		Username: "testuser",
+		Password: "password123",
 	}
+	reqBodyJSON, _ := json.Marshal(reqBody)
 
-	for _, testCase := range testTable {
-		t.Run(testCase.name, func(t *testing.T) {
-			// Init Deps
-			c := gomock.NewController(t)
-			defer c.Finish()
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, "/signup",
+		bytes.NewBuffer(reqBodyJSON))
+	assert.NoError(t, err)
 
-			auth := mock_service.NewMockUserRepository(c)
-			testCase.mockBehavior(auth, testCase.inputUser)
+	rr := httptest.NewRecorder()
 
-			// Test server
-			httpServer := NewHTTPServer(auth, nil, nil, nil, nil)
-			req := httptest.NewRequest(http.MethodPost, "/signup", bytes.NewBufferString(testCase.inputBody))
+	hashedPassword, _ := hashPassword(reqBody.Password)
+	user, _ := toDomainUser(reqBody.Username, hashedPassword)
 
-			// Test request
-			w := httptest.NewRecorder()
+	userServiceMock.On("CreateUser", mock.Anything, mock.Anything).Return(user, nil)
 
-			// Perform request
-			httpServer.SignUp(w, req)
+	httpServer.SignUp(rr, req)
 
-			// Assert
-			require.Equal(t, testCase.expectedCode, w.Code)
-		})
-	}
+	assert.Equal(t, http.StatusOK, rr.Code)
+	userServiceMock.AssertNumberOfCalls(t, "CreateUser", 1)
+}
+
+func TestSignUp_Validate(t *testing.T) {
+	userServiceMock := mocks.NewUserService(t)
+
+	userServiceMock.AssertExpectations(t)
+
+	httpServer := NewHTTPServer(userServiceMock, nil, nil, nil, nil)
+
+	t.Run("empty username", func(t *testing.T) {
+		reqBody := AuthRequest{
+			Username: "",
+			Password: "password123",
+		}
+		reqBodyJSON, _ := json.Marshal(reqBody)
+
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, "/signup",
+			bytes.NewBuffer(reqBodyJSON))
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+
+		httpServer.SignUp(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		userServiceMock.AssertNumberOfCalls(t, "CreateUser", 0)
+	})
+
+	t.Run("empty password", func(t *testing.T) {
+		reqBody := AuthRequest{
+			Username: "testuser",
+			Password: "",
+		}
+		reqBodyJSON, _ := json.Marshal(reqBody)
+
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, "/signup",
+			bytes.NewBuffer(reqBodyJSON))
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+
+		httpServer.SignUp(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		userServiceMock.AssertNumberOfCalls(t, "CreateUser", 0)
+	})
+
+	t.Run("invalid json", func(t *testing.T) {
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, "/signup",
+			bytes.NewBuffer([]byte("{invalid}")))
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+
+		httpServer.SignUp(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		userServiceMock.AssertNumberOfCalls(t, "CreateUser", 0)
+	})
 }

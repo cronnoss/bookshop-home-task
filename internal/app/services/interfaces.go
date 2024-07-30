@@ -1,5 +1,3 @@
-//go:generate mockgen -source=interfaces.go -destination=mocks/mock.go
-
 package services
 
 import (
