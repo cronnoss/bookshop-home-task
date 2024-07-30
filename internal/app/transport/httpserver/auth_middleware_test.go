@@ -56,6 +56,28 @@ func TestCheckAdmin_InvalidToken(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 }
 
+func TestCheckAdmin_EmptyUsername(t *testing.T) {
+	userServiceMock := mocks.NewUserService(t)
+	tokenServiceMock := mocks.NewTokenService(t)
+	httpServer := NewHTTPServer(userServiceMock, tokenServiceMock, nil, nil, nil)
+
+	req, err := http.NewRequestWithContext(context.Background(), "", "", nil)
+	require.NoError(t, err)
+	req.Header.Set(AuthorizationHeader, BearerPrefix+"empty-username-token")
+
+	user := domain.User{Username: "", Admin: true}
+	tokenServiceMock.On("GetUser", "empty-username-token").Return(user, nil)
+
+	rr := httptest.NewRecorder()
+	handler := httpServer.CheckAdmin(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code)
+}
+
 func TestCheckAdmin_NotAdminUser(t *testing.T) {
 	userServiceMock := mocks.NewUserService(t)
 	tokenServiceMock := mocks.NewTokenService(t)
@@ -119,4 +141,26 @@ func TestCheckAuthorizedUser_InvalidToken(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
+}
+
+func TestCheckAuthorizedUser_EmptyName(t *testing.T) {
+	userServiceMock := mocks.NewUserService(t)
+	tokenServiceMock := mocks.NewTokenService(t)
+	httpServer := NewHTTPServer(userServiceMock, tokenServiceMock, nil, nil, nil)
+
+	req, err := http.NewRequestWithContext(context.Background(), "", "", nil)
+	require.NoError(t, err)
+	req.Header.Set(AuthorizationHeader, BearerPrefix+"empty-username-token")
+
+	user := domain.User{Username: "", Admin: false}
+	tokenServiceMock.On("GetUser", "empty-username-token").Return(user, nil)
+
+	rr := httptest.NewRecorder()
+	handler := httpServer.CheckAuthorizedUser(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code)
 }
