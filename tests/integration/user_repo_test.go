@@ -1,6 +1,6 @@
 // //go:build integration
 
-package pgrepo
+package integration
 
 import (
 	"context"
@@ -11,6 +11,8 @@ import (
 
 	"github.com/cronnoss/bookshop-home-task/internal/app/domain"
 	"github.com/cronnoss/bookshop-home-task/internal/app/repository/models"
+	"github.com/cronnoss/bookshop-home-task/internal/app/repository/pgrepo"
+	"github.com/cronnoss/bookshop-home-task/internal/pkg/pg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,6 +33,14 @@ type IntegrationSuite struct {
 	t           *testing.T
 	dbContainer tc.Container
 	db          *bun.DB
+}
+
+type PGDBAdapter struct {
+	*bun.DB
+}
+
+func NewPGDBAdapter(db *bun.DB) *PGDBAdapter {
+	return &PGDBAdapter{db}
 }
 
 func (s *IntegrationSuite) SetupSuite() {
@@ -84,20 +94,20 @@ func (s *IntegrationSuite) TestCreateUser_Success(t *testing.T) {
 
 	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
 
+	userRepo := pgrepo.UserRepo{DB: (*pg.DB)(NewPGDBAdapter(s.db))}
 	user := domain.User{ID: 1, Username: "testuser", Password: "password123"}
 
-	_, err := s.db.NewInsert().Model(&user).Exec(ctx)
+	createdUser, err := userRepo.CreateUser(ctx, user)
 	require.NoError(t, err)
 
-	err = s.db.NewSelect().
-		Model(&user).
-		Where("id = 1").
-		Scan(ctx)
+	assert.Equal(t, "testuser", createdUser.Username)
+	assert.Equal(t, "password123", createdUser.Password)
 
+	// Retrieve the user from the database
+	retrievedUser, err := userRepo.GetUser(ctx, "testuser")
 	require.NoError(t, err)
-	assert.NotNil(t, user.Admin)
-	assert.Equal(t, "testuser", user.Username)
-	assert.Equal(t, "password123", user.Password)
+	assert.Equal(t, "testuser", retrievedUser.Username)
+	assert.Equal(t, "password123", retrievedUser.Password)
 }
 
 func (s *IntegrationSuite) TestCreateUser_FailsOnInsert(t *testing.T) {
@@ -105,12 +115,13 @@ func (s *IntegrationSuite) TestCreateUser_FailsOnInsert(t *testing.T) {
 
 	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
 
+	userRepo := pgrepo.UserRepo{DB: (*pg.DB)(NewPGDBAdapter(s.db))}
 	user := domain.User{ID: 1, Username: "testuser", Password: "password123"}
 
-	_, err := s.db.NewInsert().Model(&user).Exec(ctx)
+	_, err := userRepo.CreateUser(ctx, user)
 	require.NoError(t, err)
 
-	_, err = s.db.NewInsert().Model(&user).Exec(ctx)
+	_, err = userRepo.CreateUser(ctx, user)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "duplicate key value violates unique constraint \"users_pkey\"")
 }
@@ -120,15 +131,13 @@ func (s *IntegrationSuite) TestGetUser_NotFound(t *testing.T) {
 
 	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
 
-	user := domain.User{ID: 1, Username: "testuser", Password: "password123"}
+	userRepo := pgrepo.UserRepo{DB: (*pg.DB)(NewPGDBAdapter(s.db))}
 
-	err := s.db.NewSelect().
-		Model(&user).
-		Where("id = 1").
-		Scan(ctx)
+	// Attempt to retrieve a user that does not exist
+	_, err := userRepo.GetUser(ctx, "testuser")
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "no rows in result set")
+	assert.Contains(t, err.Error(), "not found")
 }
 
 func connectToPostgresForTest(_ *testing.T, host, user, password, dbname, port string) *bun.DB {

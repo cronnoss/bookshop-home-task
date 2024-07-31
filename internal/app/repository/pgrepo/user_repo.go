@@ -12,12 +12,12 @@ import (
 )
 
 type UserRepo struct {
-	db *pg.DB
+	DB *pg.DB
 }
 
 func NewUserRepo(db *pg.DB) *UserRepo {
 	return &UserRepo{
-		db: db,
+		DB: db,
 	}
 }
 
@@ -25,7 +25,7 @@ func (r UserRepo) CreateUser(ctx context.Context, user domain.User) (domain.User
 	dbUser := domainToUser(user)
 
 	var insertedUser models.User
-	err := r.db.NewInsert().Model(&dbUser).Returning("*").Scan(ctx, &insertedUser)
+	err := r.DB.NewInsert().Model(&dbUser).Returning("*").Scan(ctx, &insertedUser)
 	if err != nil {
 		return domain.User{}, fmt.Errorf("failed to insert a user: %w", err)
 	}
@@ -40,7 +40,7 @@ func (r UserRepo) CreateUser(ctx context.Context, user domain.User) (domain.User
 
 func (r UserRepo) GetUser(ctx context.Context, username string) (domain.User, error) {
 	var dbUser models.User
-	err := r.db.NewSelect().Model(&dbUser).Where("username = ?", username).Scan(ctx)
+	err := r.DB.NewSelect().Model(&dbUser).Where("username = ?", username).Scan(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.User{}, domain.ErrNotFound
@@ -58,7 +58,7 @@ func (r UserRepo) GetUser(ctx context.Context, username string) (domain.User, er
 
 func (r UserRepo) GetUserByID(ctx context.Context, id int) (domain.User, error) {
 	var dbUser models.User
-	err := r.db.NewSelect().Model(&dbUser).Where("id = ?", id).Scan(ctx)
+	err := r.DB.NewSelect().Model(&dbUser).Where("id = ?", id).Scan(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.User{}, domain.ErrNotFound
