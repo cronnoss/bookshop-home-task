@@ -53,6 +53,8 @@ linters-settings:
           - github.com/stretchr/testify/assert
           - github.com/golang/mock/gomock
           - golang.org/x/crypto/bcrypt
+          - github.com/google/uuid
+          - github.com/testcontainers/testcontainers-go
 
 issues:
   exclude-rules:

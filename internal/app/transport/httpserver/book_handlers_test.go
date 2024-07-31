@@ -63,3 +63,18 @@ func TestHttpServer_GetBook(t *testing.T) {
 	require.Equal(t, createBookResponse.Stock, testCreatedBook.Stock())
 	require.Equal(t, createBookResponse.CategoryID, testCreatedBook.CategoryID())
 }
+
+func TestGetBook_ReturnsBadRequestForInvalidID(t *testing.T) {
+	bookServiceMock := mocks.NewBookService(t)
+	httpServer := NewHTTPServer(nil, nil, bookServiceMock, nil, nil)
+
+	req := httptest.NewRequest(http.MethodGet, "/book/invalid", nil)
+	w := httptest.NewRecorder()
+
+	httpServer.GetBook(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	require.Equal(t, http.StatusBadRequest, res.StatusCode)
+}
