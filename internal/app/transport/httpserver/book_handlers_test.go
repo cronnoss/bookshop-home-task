@@ -78,3 +78,66 @@ func TestGetBook_ReturnsBadRequestForInvalidID(t *testing.T) {
 
 	require.Equal(t, http.StatusBadRequest, res.StatusCode)
 }
+
+func TestHttpServer_CreateBook_ReturnsBadRequestForInvalidJSON(t *testing.T) {
+	bookServiceMock := mocks.NewBookService(t)
+	httpServer := NewHTTPServer(nil, nil, bookServiceMock, nil, nil)
+
+	invalidJSON := []byte(`{ "title": "The history of Golang", "year": "invalid" }`)
+	req := httptest.NewRequest(http.MethodPost, "/book", bytes.NewBuffer(invalidJSON))
+	w := httptest.NewRecorder()
+
+	httpServer.CreateBook(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	require.Equal(t, http.StatusBadRequest, res.StatusCode)
+}
+
+func TestHttpServer_CreateBook_ReturnsBadRequestForInvalidRequest(t *testing.T) {
+	bookServiceMock := mocks.NewBookService(t)
+	httpServer := NewHTTPServer(nil, nil, bookServiceMock, nil, nil)
+
+	invalidRequest := []byte(
+		`{ "title": "", "year": 2024, "author": "Rob Pike", "price": 1000, "stock": 100, "categoryId": 1 }`)
+	req := httptest.NewRequest(http.MethodPost, "/book", bytes.NewBuffer(invalidRequest))
+	w := httptest.NewRecorder()
+
+	httpServer.CreateBook(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	require.Equal(t, http.StatusBadRequest, res.StatusCode)
+}
+
+func TestHttpServer_UpdateBook_ReturnsBadRequestForInvalidID(t *testing.T) {
+	bookServiceMock := mocks.NewBookService(t)
+	httpServer := NewHTTPServer(nil, nil, bookServiceMock, nil, nil)
+
+	req := httptest.NewRequest(http.MethodPut, "/book/invalid", nil)
+	w := httptest.NewRecorder()
+
+	httpServer.UpdateBook(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	require.Equal(t, http.StatusBadRequest, res.StatusCode)
+}
+
+func TestHttpServer_DeleteBook_ReturnsBadRequestForInvalidID(t *testing.T) {
+	bookServiceMock := mocks.NewBookService(t)
+	httpServer := NewHTTPServer(nil, nil, bookServiceMock, nil, nil)
+
+	req := httptest.NewRequest(http.MethodDelete, "/book/invalid", nil)
+	w := httptest.NewRecorder()
+
+	httpServer.DeleteBook(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	require.Equal(t, http.StatusBadRequest, res.StatusCode)
+}

@@ -56,3 +56,10 @@ run:
 	MIGRATIONS_PATH="file://./internal/app/migrations" \
 	./app
 
+debug:
+	go build -gcflags="all=-N -l" -o app cmd/main.go && \
+	HTTP_ADDR=:8080 \
+	DEBUG_ERRORS=1 \
+	DSN="postgres://postgres:password@127.0.0.1:5433/bookshop?sslmode=disable" \
+	MIGRATIONS_PATH="file://./internal/app/migrations" \
+	./app
