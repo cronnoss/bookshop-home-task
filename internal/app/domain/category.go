@@ -11,7 +11,7 @@ type NewCategoryData struct {
 	Name string
 }
 
-// NewCategory creates a new book.
+// NewCategory creates a new category.
 func NewCategory(data NewCategoryData) (Category, error) {
 	return Category{
 		id:   data.ID,

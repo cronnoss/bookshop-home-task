@@ -116,7 +116,7 @@ func TestHttpServer_UpdateBook_ReturnsBadRequestForInvalidID(t *testing.T) {
 	bookServiceMock := mocks.NewBookService(t)
 	httpServer := NewHTTPServer(nil, nil, bookServiceMock, nil, nil)
 
-	req := httptest.NewRequest(http.MethodPut, "/book/invalid", nil)
+	req := httptest.NewRequest(http.MethodPatch, "/book/invalid", nil)
 	w := httptest.NewRecorder()
 
 	httpServer.UpdateBook(w, req)
