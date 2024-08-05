@@ -5,6 +5,7 @@ package integration
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"testing"
@@ -28,6 +29,15 @@ const (
 	dbUser     = "user"
 	dbPassword = "password"
 )
+
+type Book struct {
+	Title      string
+	Year       int
+	Author     string
+	Price      int
+	Stock      int
+	CategoryID int
+}
 
 type IntegrationSuite struct {
 	t           *testing.T
@@ -86,6 +96,10 @@ func TestIntegrationSuite(t *testing.T) {
 		t.Run("TestCreateUser_Success", suite.TestCreateUser_Success)
 		t.Run("TestCreateUser_FailsOnInsert", suite.TestCreateUser_FailsOnInsert)
 		t.Run("TestGetUser_NotFound", suite.TestGetUser_NotFound)
+		t.Run("TestHandleBunTransaction_Success", suite.TestHandleBunTransaction_Success)
+		t.Run("TestHandleBunTransaction_FailBegin", suite.TestHandleBunTransaction_FailBegin)
+		t.Run("TestHandleBunTransaction_FailCommit", suite.TestHandleBunTransaction_FailCommit)
+		t.Run("TestHandleBunTransaction_FailRollback", suite.TestHandleBunTransaction_FailRollback)
 	})
 }
 
@@ -140,6 +154,85 @@ func (s *IntegrationSuite) TestGetUser_NotFound(t *testing.T) {
 	assert.Contains(t, err.Error(), "not found")
 }
 
+func (s *IntegrationSuite) TestHandleBunTransaction_Success(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	pgDB := NewPGDBAdapter(s.db)
+
+	db1 := &pg.DB{DB: pgDB.DB}
+	bunTx := func(tx bun.Tx) error {
+		book := &Book{
+			Title:      "The Great Gatsby",
+			Year:       1925,
+			Author:     "F. Scott Fitzgerald",
+			Price:      1000,
+			Stock:      100,
+			CategoryID: 1,
+		}
+
+		_, err := tx.NewInsert().Model(book).Exec(ctx)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	err := pg.HandleBunTransaction(ctx, bunTx, db1)
+	assert.NoError(t, err)
+}
+
+func (s *IntegrationSuite) TestHandleBunTransaction_FailBegin(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	pgDB := NewPGDBAdapter(s.db)
+
+	db1 := &pg.DB{DB: pgDB.DB}
+	bunTx := func(tx bun.Tx) error {
+		return errors.New("begin transaction failed")
+	}
+
+	err := pg.HandleBunTransaction(ctx, bunTx, db1)
+	assert.Error(t, err)
+	assert.Equal(t, "failed executing transaction: begin transaction failed", err.Error())
+}
+
+func (s *IntegrationSuite) TestHandleBunTransaction_FailCommit(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+	pgDB := NewPGDBAdapter(s.db)
+
+	db1 := &pg.DB{DB: pgDB.DB}
+	bunTx := func(tx bun.Tx) error {
+		return errors.New("commit transaction failed")
+	}
+
+	err := pg.HandleBunTransaction(ctx, bunTx, db1)
+	assert.Error(t, err)
+	assert.Equal(t, "failed executing transaction: commit transaction failed", err.Error())
+}
+
+func (s *IntegrationSuite) TestHandleBunTransaction_FailRollback(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+	pgDB := NewPGDBAdapter(s.db)
+
+	db1 := &pg.DB{DB: pgDB.DB}
+	bunTx := func(tx bun.Tx) error {
+		return errors.New("rollback transaction failed")
+	}
+
+	err := pg.HandleBunTransaction(ctx, bunTx, db1)
+	assert.Error(t, err)
+	assert.Equal(t, "failed executing transaction: rollback transaction failed", err.Error())
+}
+
 func connectToPostgresForTest(_ *testing.T, host, user, password, dbname, port string) *bun.DB {
 	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, dbname)
 
@@ -160,6 +253,10 @@ func createSchema(ctx context.Context, db *bun.DB) error {
 	_, err := db.NewCreateTable().Model((*models.User)(nil)).Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create user table: %w", err)
+	}
+	_, err = db.NewCreateTable().Model((*models.Book)(nil)).Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create books table: %w", err)
 	}
 	return nil
 }
