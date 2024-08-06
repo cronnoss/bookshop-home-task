@@ -93,13 +93,10 @@ func TestIntegrationSuite(t *testing.T) {
 	defer suite.TearDownSuite()
 
 	t.Run("IntegrationSuite", func(t *testing.T) {
+		// UserRepo tests
 		t.Run("TestCreateUser_Success", suite.TestCreateUser_Success)
 		t.Run("TestCreateUser_FailsOnInsert", suite.TestCreateUser_FailsOnInsert)
 		t.Run("TestGetUser_NotFound", suite.TestGetUser_NotFound)
-		t.Run("TestHandleBunTransaction_Success", suite.TestHandleBunTransaction_Success)
-		t.Run("TestHandleBunTransaction_FailBegin", suite.TestHandleBunTransaction_FailBegin)
-		t.Run("TestHandleBunTransaction_FailCommit", suite.TestHandleBunTransaction_FailCommit)
-		t.Run("TestHandleBunTransaction_FailRollback", suite.TestHandleBunTransaction_FailRollback)
 		// BookRepo tests
 		t.Run("TestCreateBook_Success", suite.TestCreateBook_Success)
 		t.Run("TestGetBook_Success", suite.TestGetBook_Success)
@@ -107,9 +104,73 @@ func TestIntegrationSuite(t *testing.T) {
 		t.Run("TestUpdateBook_Success", suite.TestUpdateBook_Success)
 		t.Run("TestDeleteBook_Success", suite.TestDeleteBook_Success)
 		t.Run("TestGetBooks_Success", suite.TestGetBooks_Success)
+		// CartRepo tests
+		t.Run("TestGetCart_Success", suite.TestGetCart_Success)
+		t.Run("TestGetCart_NotFound", suite.TestGetCart_NotFound)
+		t.Run("TestUpdateCartAndStocks_Success", suite.TestUpdateCartAndStocks_Success)
+		t.Run("TestCheckStocks_Success", suite.TestCheckStocks_Success)
+		t.Run("TestDeleteCart_Success", suite.TestDeleteCart_Success)
+		// HandleBunTransaction tests
+		t.Run("TestHandleBunTransaction_Success", suite.TestHandleBunTransaction_Success)
+		t.Run("TestHandleBunTransaction_FailBegin", suite.TestHandleBunTransaction_FailBegin)
+		t.Run("TestHandleBunTransaction_FailCommit", suite.TestHandleBunTransaction_FailCommit)
+		t.Run("TestHandleBunTransaction_FailRollback", suite.TestHandleBunTransaction_FailRollback)
 	})
 }
 
+// UserRepo tests.
+func (s *IntegrationSuite) TestCreateUser_Success(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	userRepo := pgrepo.UserRepo{DB: (*pg.DB)(NewPGDBAdapter(s.db))}
+	user := domain.User{ID: 1, Username: "testuser", Password: "password123"}
+
+	createdUser, err := userRepo.CreateUser(ctx, user)
+	require.NoError(t, err)
+
+	assert.Equal(t, "testuser", createdUser.Username)
+	assert.Equal(t, "password123", createdUser.Password)
+
+	// Retrieve the user from the database
+	retrievedUser, err := userRepo.GetUser(ctx, "testuser")
+	require.NoError(t, err)
+	assert.Equal(t, "testuser", retrievedUser.Username)
+	assert.Equal(t, "password123", retrievedUser.Password)
+}
+
+func (s *IntegrationSuite) TestCreateUser_FailsOnInsert(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	userRepo := pgrepo.UserRepo{DB: (*pg.DB)(NewPGDBAdapter(s.db))}
+	user := domain.User{ID: 1, Username: "testuser", Password: "password123"}
+
+	_, err := userRepo.CreateUser(ctx, user)
+	require.NoError(t, err)
+
+	_, err = userRepo.CreateUser(ctx, user)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "duplicate key value violates unique constraint \"users_pkey\"")
+}
+
+func (s *IntegrationSuite) TestGetUser_NotFound(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	userRepo := pgrepo.UserRepo{DB: (*pg.DB)(NewPGDBAdapter(s.db))}
+
+	// Attempt to retrieve a user that does not exist
+	_, err := userRepo.GetUser(ctx, "testuser")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+}
+
+// BookRepo tests.
 func (s *IntegrationSuite) TestCreateBook_Success(t *testing.T) {
 	ctx := context.Background()
 
@@ -304,57 +365,194 @@ func (s *IntegrationSuite) TestGetBooks_Success(t *testing.T) {
 	assert.Len(t, books, 2)
 }
 
-func (s *IntegrationSuite) TestCreateUser_Success(t *testing.T) {
+// CartRepo tests.
+func (s *IntegrationSuite) TestGetCart_Success(t *testing.T) {
 	ctx := context.Background()
 
 	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
 
-	userRepo := pgrepo.UserRepo{DB: (*pg.DB)(NewPGDBAdapter(s.db))}
-	user := domain.User{ID: 1, Username: "testuser", Password: "password123"}
+	cartRepo := pgrepo.NewCartRepo(&pg.DB{DB: s.db})
 
-	createdUser, err := userRepo.CreateUser(ctx, user)
+	cartData := domain.NewCartData{
+		UserID:  1,
+		BookIDs: []int{1, 2},
+	}
+
+	cart, err := domain.NewCart(cartData)
+	require.NoError(t, err)
+	cartModel := &models.Cart{
+		UserID:  cart.UserID(),
+		BookIDs: cart.BookIDs(),
+	}
+	_, err = s.db.NewInsert().Model(cartModel).Column("user_id", "book_ids").Exec(ctx)
 	require.NoError(t, err)
 
-	assert.Equal(t, "testuser", createdUser.Username)
-	assert.Equal(t, "password123", createdUser.Password)
-
-	// Retrieve the user from the database
-	retrievedUser, err := userRepo.GetUser(ctx, "testuser")
+	retrievedCart, err := cartRepo.GetCart(ctx, cartData.UserID)
 	require.NoError(t, err)
-	assert.Equal(t, "testuser", retrievedUser.Username)
-	assert.Equal(t, "password123", retrievedUser.Password)
+
+	assert.Equal(t, cartData.UserID, retrievedCart.UserID())
+	assert.ElementsMatch(t, cartData.BookIDs, retrievedCart.BookIDs())
 }
 
-func (s *IntegrationSuite) TestCreateUser_FailsOnInsert(t *testing.T) {
+func (s *IntegrationSuite) TestGetCart_NotFound(t *testing.T) {
 	ctx := context.Background()
 
 	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
 
-	userRepo := pgrepo.UserRepo{DB: (*pg.DB)(NewPGDBAdapter(s.db))}
-	user := domain.User{ID: 1, Username: "testuser", Password: "password123"}
+	cartRepo := pgrepo.NewCartRepo(&pg.DB{DB: s.db})
 
-	_, err := userRepo.CreateUser(ctx, user)
-	require.NoError(t, err)
-
-	_, err = userRepo.CreateUser(ctx, user)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "duplicate key value violates unique constraint \"users_pkey\"")
-}
-
-func (s *IntegrationSuite) TestGetUser_NotFound(t *testing.T) {
-	ctx := context.Background()
-
-	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
-
-	userRepo := pgrepo.UserRepo{DB: (*pg.DB)(NewPGDBAdapter(s.db))}
-
-	// Attempt to retrieve a user that does not exist
-	_, err := userRepo.GetUser(ctx, "testuser")
-
+	_, err := cartRepo.GetCart(ctx, 1)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
 
+func (s *IntegrationSuite) TestUpdateCartAndStocks_Success(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	cartRepo := pgrepo.NewCartRepo(&pg.DB{DB: s.db})
+
+	cartData := domain.NewCartData{
+		UserID:  1,
+		BookIDs: []int{1, 2},
+	}
+
+	cart, err := domain.NewCart(cartData)
+	require.NoError(t, err)
+	cartModel := &models.Cart{
+		UserID:  cart.UserID(),
+		BookIDs: cart.BookIDs(),
+	}
+	_, err = s.db.NewInsert().Model(cartModel).Column("user_id", "book_ids").
+		On("CONFLICT (user_id) DO UPDATE").Set("book_ids = EXCLUDED.book_ids").Exec(ctx)
+	require.NoError(t, err)
+
+	_, err = cartRepo.GetCart(ctx, cartData.UserID)
+	require.NoError(t, err)
+
+	updatedCartData := domain.NewCartData{
+		UserID:  1,
+		BookIDs: []int{1},
+	}
+
+	updatedCart, err := domain.NewCart(updatedCartData)
+	require.NoError(t, err)
+	_ = &models.Cart{
+		UserID:  updatedCart.UserID(),
+		BookIDs: updatedCart.BookIDs(),
+	}
+
+	err = cartRepo.UpdateCartAndStocks(ctx, updatedCart)
+	require.NoError(t, err)
+
+	retrievedCart, err := cartRepo.GetCart(ctx, updatedCartData.UserID)
+	require.NoError(t, err)
+
+	assert.Equal(t, updatedCartData.UserID, retrievedCart.UserID())
+	assert.ElementsMatch(t, updatedCartData.BookIDs, retrievedCart.BookIDs())
+}
+
+func (s *IntegrationSuite) TestCheckStocks_Success(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	cartRepo := pgrepo.NewCartRepo(&pg.DB{DB: s.db})
+
+	bookData1 := domain.NewBookData{
+		Title:      "1984",
+		Year:       1949,
+		Author:     "George Orwell",
+		Price:      1500,
+		Stock:      200,
+		CategoryID: 1,
+	}
+
+	bookData2 := domain.NewBookData{
+		Title:      "Animal Farm",
+		Year:       1945,
+		Author:     "George Orwell",
+		Price:      1000,
+		Stock:      100,
+		CategoryID: 1,
+	}
+
+	book1, err := domain.NewBook(bookData1)
+	require.NoError(t, err)
+
+	book2, err := domain.NewBook(bookData2)
+	require.NoError(t, err)
+
+	_, err = pgrepo.NewBookRepo(&pg.DB{DB: s.db}).CreateBook(ctx, book1)
+	require.NoError(t, err)
+
+	_, err = pgrepo.NewBookRepo(&pg.DB{DB: s.db}).CreateBook(ctx, book2)
+	require.NoError(t, err)
+
+	cartData := domain.NewCartData{
+		UserID:  1,
+		BookIDs: []int{1, 2},
+	}
+
+	cart, err := domain.NewCart(cartData)
+	require.NoError(t, err)
+
+	err = cartRepo.UpdateCartAndStocks(ctx, cart)
+	require.NoError(t, err)
+
+	ok, err := cartRepo.CheckStocks(ctx, cart)
+	require.NoError(t, err)
+	assert.True(t, ok)
+
+	updatedCart, err := cartRepo.GetCart(ctx, cartData.UserID)
+	require.NoError(t, err)
+
+	assert.Equal(t, cartData.UserID, updatedCart.UserID())
+
+	// Check that the stock of the books has been updated
+	bookRepo := pgrepo.NewBookRepo(&pg.DB{DB: s.db})
+
+	book1, err = bookRepo.GetBook(ctx, 1)
+	require.NoError(t, err)
+
+	book2, err = bookRepo.GetBook(ctx, 2)
+	require.NoError(t, err)
+
+	assert.Equal(t, 199, book1.Stock())
+	assert.Equal(t, 99, book2.Stock())
+}
+
+func (s *IntegrationSuite) TestDeleteCart_Success(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	cartRepo := pgrepo.NewCartRepo(&pg.DB{DB: s.db})
+
+	cartData := domain.NewCartData{
+		UserID:  1,
+		BookIDs: []int{1, 2},
+	}
+
+	cart, err := domain.NewCart(cartData)
+	require.NoError(t, err)
+	cartModel := &models.Cart{
+		UserID:  cart.UserID(),
+		BookIDs: cart.BookIDs(),
+	}
+	_, err = s.db.NewInsert().Model(cartModel).Column("user_id", "book_ids").Exec(ctx)
+	require.NoError(t, err)
+
+	err = cartRepo.DeleteCart(ctx, cartData.UserID)
+	require.NoError(t, err)
+
+	_, err = cartRepo.GetCart(ctx, cartData.UserID)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+}
+
+// HandleBunTransaction tests.
 func (s *IntegrationSuite) TestHandleBunTransaction_Success(t *testing.T) {
 	ctx := context.Background()
 
@@ -458,6 +656,14 @@ func createSchema(ctx context.Context, db *bun.DB) error {
 	_, err = db.NewCreateTable().Model((*models.Book)(nil)).Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create books table: %w", err)
+	}
+	_, err = db.NewCreateTable().Model((*models.Cart)(nil)).Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create carts table: %w", err)
+	}
+	_, err = db.ExecContext(ctx, `ALTER TABLE carts ADD CONSTRAINT unique_user_id UNIQUE (user_id)`)
+	if err != nil {
+		return fmt.Errorf("failed to add unique constraint to carts table: %w", err)
 	}
 	return nil
 }
