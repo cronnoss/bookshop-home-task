@@ -100,7 +100,208 @@ func TestIntegrationSuite(t *testing.T) {
 		t.Run("TestHandleBunTransaction_FailBegin", suite.TestHandleBunTransaction_FailBegin)
 		t.Run("TestHandleBunTransaction_FailCommit", suite.TestHandleBunTransaction_FailCommit)
 		t.Run("TestHandleBunTransaction_FailRollback", suite.TestHandleBunTransaction_FailRollback)
+		// BookRepo tests
+		t.Run("TestCreateBook_Success", suite.TestCreateBook_Success)
+		t.Run("TestGetBook_Success", suite.TestGetBook_Success)
+		t.Run("TestGetBook_NotFound", suite.TestGetBook_NotFound)
+		t.Run("TestUpdateBook_Success", suite.TestUpdateBook_Success)
+		t.Run("TestDeleteBook_Success", suite.TestDeleteBook_Success)
+		t.Run("TestGetBooks_Success", suite.TestGetBooks_Success)
 	})
+}
+
+func (s *IntegrationSuite) TestCreateBook_Success(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	bookRepo := pgrepo.NewBookRepo(&pg.DB{DB: s.db})
+
+	bookData := domain.NewBookData{
+		Title:      "1984",
+		Year:       1949,
+		Author:     "George Orwell",
+		Price:      1500,
+		Stock:      200,
+		CategoryID: 1,
+	}
+
+	book, err := domain.NewBook(bookData)
+	require.NoError(t, err)
+
+	createdBook, err := bookRepo.CreateBook(ctx, book)
+	require.NoError(t, err)
+
+	assert.Equal(t, "1984", createdBook.Title())
+	assert.Equal(t, "George Orwell", createdBook.Author())
+	assert.Equal(t, 1949, createdBook.Year())
+	assert.Equal(t, 1500, createdBook.Price())
+	assert.Equal(t, 200, createdBook.Stock())
+	assert.Equal(t, 1, createdBook.CategoryID())
+}
+
+func (s *IntegrationSuite) TestGetBook_Success(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	bookRepo := pgrepo.NewBookRepo(&pg.DB{DB: s.db})
+
+	bookData := domain.NewBookData{
+		Title:      "1984",
+		Year:       1949,
+		Author:     "George Orwell",
+		Price:      1500,
+		Stock:      200,
+		CategoryID: 1,
+	}
+
+	book, err := domain.NewBook(bookData)
+	require.NoError(t, err)
+
+	createdBook, err := bookRepo.CreateBook(ctx, book)
+	require.NoError(t, err)
+
+	retrievedBook, err := bookRepo.GetBook(ctx, createdBook.ID())
+	require.NoError(t, err)
+
+	assert.Equal(t, "1984", retrievedBook.Title())
+	assert.Equal(t, "George Orwell", retrievedBook.Author())
+	assert.Equal(t, 1949, retrievedBook.Year())
+	assert.Equal(t, 1500, retrievedBook.Price())
+	assert.Equal(t, 200, retrievedBook.Stock())
+	assert.Equal(t, 1, retrievedBook.CategoryID())
+}
+
+func (s *IntegrationSuite) TestGetBook_NotFound(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	bookRepo := pgrepo.NewBookRepo(&pg.DB{DB: s.db})
+
+	_, err := bookRepo.GetBook(ctx, 1)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+}
+
+func (s *IntegrationSuite) TestUpdateBook_Success(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	bookRepo := pgrepo.NewBookRepo(&pg.DB{DB: s.db})
+
+	bookData := domain.NewBookData{
+		Title:      "1984",
+		Year:       1949,
+		Author:     "George Orwell",
+		Price:      1500,
+		Stock:      200,
+		CategoryID: 1,
+	}
+
+	book, err := domain.NewBook(bookData)
+	require.NoError(t, err)
+
+	createdBook, err := bookRepo.CreateBook(ctx, book)
+	require.NoError(t, err)
+
+	createdBookData := domain.NewBookData{
+		ID:         createdBook.ID(),
+		Title:      "Animal Farm",
+		Year:       1945,
+		Author:     "George Orwell",
+		Price:      1000,
+		Stock:      100,
+		CategoryID: 1,
+	}
+
+	updatedBook, err := domain.NewBook(createdBookData)
+	require.NoError(t, err)
+
+	updatedBook, err = bookRepo.UpdateBook(ctx, updatedBook)
+	require.NoError(t, err)
+
+	assert.Equal(t, "Animal Farm", updatedBook.Title())
+	assert.Equal(t, "George Orwell", updatedBook.Author())
+	assert.Equal(t, 1945, updatedBook.Year())
+	assert.Equal(t, 1000, updatedBook.Price())
+	assert.Equal(t, 200, updatedBook.Stock()) // Stock should not be updated
+	assert.Equal(t, 1, updatedBook.CategoryID())
+}
+
+func (s *IntegrationSuite) TestDeleteBook_Success(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	bookRepo := pgrepo.NewBookRepo(&pg.DB{DB: s.db})
+
+	bookData := domain.NewBookData{
+		Title:      "1984",
+		Year:       1949,
+		Author:     "George Orwell",
+		Price:      1500,
+		Stock:      200,
+		CategoryID: 1,
+	}
+
+	book, err := domain.NewBook(bookData)
+	require.NoError(t, err)
+
+	createdBook, err := bookRepo.CreateBook(ctx, book)
+	require.NoError(t, err)
+
+	err = bookRepo.DeleteBook(ctx, createdBook.ID())
+	require.NoError(t, err)
+
+	_, err = bookRepo.GetBook(ctx, createdBook.ID())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+}
+
+func (s *IntegrationSuite) TestGetBooks_Success(t *testing.T) {
+	ctx := context.Background()
+
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	bookRepo := pgrepo.NewBookRepo(&pg.DB{DB: s.db})
+
+	bookData1 := domain.NewBookData{
+		Title:      "1984",
+		Year:       1949,
+		Author:     "George Orwell",
+		Price:      1500,
+		Stock:      200,
+		CategoryID: 1,
+	}
+
+	bookData2 := domain.NewBookData{
+		Title:      "Animal Farm",
+		Year:       1945,
+		Author:     "George Orwell",
+		Price:      1000,
+		Stock:      100,
+		CategoryID: 1,
+	}
+
+	book1, err := domain.NewBook(bookData1)
+	require.NoError(t, err)
+
+	book2, err := domain.NewBook(bookData2)
+	require.NoError(t, err)
+
+	_, err = bookRepo.CreateBook(ctx, book1)
+	require.NoError(t, err)
+
+	_, err = bookRepo.CreateBook(ctx, book2)
+	require.NoError(t, err)
+
+	books, err := bookRepo.GetBooks(ctx, []int{1}, 10, 0)
+	require.NoError(t, err)
+
+	assert.Len(t, books, 2)
 }
 
 func (s *IntegrationSuite) TestCreateUser_Success(t *testing.T) {
