@@ -104,6 +104,12 @@ func TestIntegrationSuite(t *testing.T) {
 		t.Run("TestUpdateBook_Success", suite.TestUpdateBook_Success)
 		t.Run("TestDeleteBook_Success", suite.TestDeleteBook_Success)
 		t.Run("TestGetBooks_Success", suite.TestGetBooks_Success)
+		// CategoryRepo tests
+		t.Run("TestCreateCategory_Success", suite.TestCreateCategory_Success)
+		t.Run("TestGetCategory_NotFound", suite.TestGetCategory_NotFound)
+		t.Run("TestUpdateCategory_Success", suite.TestUpdateCategory_Success)
+		t.Run("TestDeleteCategory_Success", suite.TestDeleteCategory_Success)
+		t.Run("TestGetCategories_Success", suite.TestGetCategories_Success)
 		// CartRepo tests
 		t.Run("TestGetCart_Success", suite.TestGetCart_Success)
 		t.Run("TestGetCart_NotFound", suite.TestGetCart_NotFound)
@@ -363,6 +369,128 @@ func (s *IntegrationSuite) TestGetBooks_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Len(t, books, 2)
+}
+
+// CategoryRepo tests.
+func (s *IntegrationSuite) TestCreateCategory_Success(t *testing.T) {
+	ctx := context.Background()
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	categoryRepo := pgrepo.NewCategoryRepo(&pg.DB{DB: s.db})
+
+	categoryData := domain.NewCategoryData{
+		Name: "Fiction",
+	}
+
+	category, err := domain.NewCategory(categoryData)
+	require.NoError(t, err)
+
+	createdCategory, err := categoryRepo.CreateCategory(ctx, category)
+	require.NoError(t, err)
+
+	assert.Equal(t, "Fiction", createdCategory.Name())
+
+	// Retrieve the category from the database
+	retrievedCategory, err := categoryRepo.GetCategory(ctx, createdCategory.ID())
+	require.NoError(t, err)
+	assert.Equal(t, "Fiction", retrievedCategory.Name())
+}
+
+func (s *IntegrationSuite) TestGetCategory_NotFound(t *testing.T) {
+	ctx := context.Background()
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	categoryRepo := pgrepo.NewCategoryRepo(&pg.DB{DB: s.db})
+
+	_, err := categoryRepo.GetCategory(ctx, 1)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+}
+
+func (s *IntegrationSuite) TestUpdateCategory_Success(t *testing.T) {
+	ctx := context.Background()
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	categoryRepo := pgrepo.NewCategoryRepo(&pg.DB{DB: s.db})
+
+	categoryData := domain.NewCategoryData{
+		Name: "Fiction",
+	}
+
+	category, err := domain.NewCategory(categoryData)
+	require.NoError(t, err)
+
+	createdCategory, err := categoryRepo.CreateCategory(ctx, category)
+	require.NoError(t, err)
+
+	createdCategoryData := domain.NewCategoryData{
+		ID:   createdCategory.ID(),
+		Name: "Non-fiction",
+	}
+
+	updatedCategory, err := domain.NewCategory(createdCategoryData)
+	require.NoError(t, err)
+
+	updatedCategory, err = categoryRepo.UpdateCategory(ctx, updatedCategory)
+	require.NoError(t, err)
+
+	assert.Equal(t, "Non-fiction", updatedCategory.Name())
+}
+
+func (s *IntegrationSuite) TestDeleteCategory_Success(t *testing.T) {
+	ctx := context.Background()
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	categoryRepo := pgrepo.NewCategoryRepo(&pg.DB{DB: s.db})
+
+	categoryData := domain.NewCategoryData{
+		Name: "Fiction",
+	}
+
+	category, err := domain.NewCategory(categoryData)
+	require.NoError(t, err)
+
+	createdCategory, err := categoryRepo.CreateCategory(ctx, category)
+	require.NoError(t, err)
+
+	err = categoryRepo.DeleteCategory(ctx, createdCategory.ID())
+	require.NoError(t, err)
+
+	_, err = categoryRepo.GetCategory(ctx, createdCategory.ID())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+}
+
+func (s *IntegrationSuite) TestGetCategories_Success(t *testing.T) {
+	ctx := context.Background()
+	s.db = s.prepareTestPostgresDatabase(uuid.NewString())
+
+	categoryRepo := pgrepo.NewCategoryRepo(&pg.DB{DB: s.db})
+
+	categoryData1 := domain.NewCategoryData{
+		Name: "Fiction",
+	}
+
+	categoryData2 := domain.NewCategoryData{
+		Name: "Non-fiction",
+	}
+
+	category1, err := domain.NewCategory(categoryData1)
+	require.NoError(t, err)
+
+	category2, err := domain.NewCategory(categoryData2)
+	require.NoError(t, err)
+
+	_, err = categoryRepo.CreateCategory(ctx, category1)
+	require.NoError(t, err)
+
+	_, err = categoryRepo.CreateCategory(ctx, category2)
+	require.NoError(t, err)
+
+	categories, err := categoryRepo.GetCategories(ctx)
+	require.NoError(t, err)
+
+	assert.Len(t, categories, 2)
 }
 
 // CartRepo tests.
@@ -656,6 +784,10 @@ func createSchema(ctx context.Context, db *bun.DB) error {
 	_, err = db.NewCreateTable().Model((*models.Book)(nil)).Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create books table: %w", err)
+	}
+	_, err = db.NewCreateTable().Model((*models.Category)(nil)).Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create categories table: %w", err)
 	}
 	_, err = db.NewCreateTable().Model((*models.Cart)(nil)).Exec(ctx)
 	if err != nil {
