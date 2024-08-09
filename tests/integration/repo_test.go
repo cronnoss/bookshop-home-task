@@ -66,6 +66,12 @@ func (s *IntegrationSuite) TearDownSuite() {
 func (s *IntegrationSuite) TearDownTest() {
 	_, err := s.db.NewTruncateTable().Model((*models.User)(nil)).Exec(context.Background())
 	require.NoError(s.t, err)
+	_, err = s.db.NewTruncateTable().Model((*models.Book)(nil)).Exec(context.Background())
+	require.NoError(s.t, err)
+	_, err = s.db.NewTruncateTable().Model((*models.Category)(nil)).Exec(context.Background())
+	require.NoError(s.t, err)
+	_, err = s.db.NewTruncateTable().Model((*models.Cart)(nil)).Exec(context.Background())
+	require.NoError(s.t, err)
 }
 
 func (s *IntegrationSuite) prepareTestPostgresDatabase(dbname string) *bun.DB {
@@ -78,10 +84,7 @@ func (s *IntegrationSuite) prepareTestPostgresDatabase(dbname string) *bun.DB {
 	require.NoError(s.t, err)
 
 	// Establish database connection
-	pg := connectToPostgresForTest(
-		s.t,
-		"localhost", dbUser, dbPassword, dbname, mappedPort.Port(),
-	)
+	pg := connectToPostgresForTest(s.t, "localhost", dbUser, dbPassword, dbname, mappedPort.Port())
 	require.NoError(s.t, err)
 
 	return pg
