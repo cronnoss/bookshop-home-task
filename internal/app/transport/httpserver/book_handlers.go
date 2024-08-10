@@ -11,7 +11,17 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// GetBook returns a book by ID.
+// @Summary GetBook
+// @Tags book
+// @Description get book by ID
+// @ID get-book
+// @Accept  json
+// @Produce  json
+// @Param book_id path int true "book ID"
+// @Success 200 {object} BookResponse
+// @Failure 400,404 {object} server.ErrorResponse
+// @Router /book/{book_id} [get]
+// GetBook returns a book by ID
 func (h HTTPServer) GetBook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	bookID, err := strconv.Atoi(vars["book_id"])
@@ -34,7 +44,20 @@ func (h HTTPServer) GetBook(w http.ResponseWriter, r *http.Request) {
 	server.RespondOK(response, w, r)
 }
 
-// CreateBook creates a new book.
+// @Summary CreateBook
+// @Security ApiKeyAuth
+// @Tags book
+// @Description create book
+// @ID create-book
+// @Accept  json
+// @Produce  json
+// @Param input body BookRequest true "book info"
+// @Success 200 {object} BookResponse
+// @Failure 400,404 {object} server.ErrorResponse
+// @Failure 401 {object} server.ErrorResponse
+// @Failure 500 {object} server.ErrorResponse
+// @Router /book [post]
+// CreateBook creates a new book
 func (h HTTPServer) CreateBook(w http.ResponseWriter, r *http.Request) {
 	var bookRequest BookRequest
 	if err := json.NewDecoder(r.Body).Decode(&bookRequest); err != nil {
@@ -64,7 +87,21 @@ func (h HTTPServer) CreateBook(w http.ResponseWriter, r *http.Request) {
 	server.RespondOK(response, w, r)
 }
 
-// UpdateBook updates a book by ID.
+// @Summary UpdateBook
+// @Security ApiKeyAuth
+// @Tags book
+// @Description update book by ID
+// @ID update-book
+// @Accept  json
+// @Produce  json
+// @Param book_id path int true "book ID"
+// @Param input body BookRequest true "book info"
+// @Success 200 {object} BookResponse
+// @Failure 400,404 {object} server.ErrorResponse
+// @Failure 401 {object} server.ErrorResponse
+// @Failure 500 {object} server.ErrorResponse
+// @Router /book/{book_id} [patch]
+// UpdateBook updates a book by ID
 func (h HTTPServer) UpdateBook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	bookID, err := strconv.Atoi(vars["book_id"])
@@ -118,7 +155,20 @@ func (h HTTPServer) UpdateBook(w http.ResponseWriter, r *http.Request) {
 	server.RespondOK(response, w, r)
 }
 
-// DeleteBook deletes a book by ID.
+// @Summary DeleteBook
+// @Security ApiKeyAuth
+// @Tags book
+// @Description delete book by ID
+// @ID delete-book
+// @Accept  json
+// @Produce  json
+// @Param book_id path int true "book ID"
+// @Success 200 {object} map[string]bool
+// @Failure 400,404 {object} server.ErrorResponse
+// @Failure 401 {object} server.ErrorResponse
+// @Failure 500 {object} server.ErrorResponse
+// @Router /book/{book_id} [delete]
+// DeleteBook deletes a book by ID
 func (h HTTPServer) DeleteBook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	bookID, err := strconv.Atoi(vars["book_id"])
@@ -150,6 +200,17 @@ func (h HTTPServer) DeleteBook(w http.ResponseWriter, r *http.Request) {
 	server.RespondOK(map[string]bool{"deleted": true}, w, r)
 }
 
+// @Summary GetBooks
+// @Tags book
+// @Description get books
+// @ID get-books
+// @Accept  json
+// @Produce  json
+// @Param category_id query []int false "category ID"
+// @Param page query int false "page number"
+// @Success 200 {array} BookResponse
+// @Failure 400,404 {object} server.ErrorResponse
+// @Router /books [get]
 func (h HTTPServer) GetBooks(w http.ResponseWriter, r *http.Request) {
 	// filter by category IDs
 	queryCategoryIDs := r.URL.Query()["category_id"]

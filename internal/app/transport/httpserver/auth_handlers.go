@@ -7,6 +7,16 @@ import (
 	"github.com/cronnoss/bookshop-home-task/internal/app/common/server"
 )
 
+// @Summary SignUp
+// @Tags auth
+// @Description create account
+// @ID create-account
+// @Accept  json
+// @Produce  json
+// @Param input body AuthRequest true "account info"
+// @Success 200 {object} map[string]bool
+// @Failure 400,404 {object} server.ErrorResponse
+// @Router /signup [post]
 func (h HTTPServer) SignUp(w http.ResponseWriter, r *http.Request) {
 	var authRequest AuthRequest
 	if err := json.NewDecoder(r.Body).Decode(&authRequest); err != nil {
@@ -40,6 +50,16 @@ func (h HTTPServer) SignUp(w http.ResponseWriter, r *http.Request) {
 	server.RespondOK(map[string]bool{"ok": true}, w, r)
 }
 
+// @Summary SignIn
+// @Tags auth
+// @Description login
+// @ID login
+// @Accept  json
+// @Produce  json
+// @Param input body AuthRequest true "credentials"
+// @Success 200 {string} string "token"
+// @Failure 400,404 {object} server.ErrorResponse
+// @Router /signin [post]
 func (h HTTPServer) SignIn(w http.ResponseWriter, r *http.Request) {
 	var authRequest AuthRequest
 	if err := json.NewDecoder(r.Body).Decode(&authRequest); err != nil {

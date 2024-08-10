@@ -47,6 +47,8 @@ There are 3 permission levels:
 - `make run` runs the app locally on port 8080 without docker.
 - `make lint` runs the linter
 
+Swagger UI is available at `http://localhost:8080/swagger/index.html`
+
 Short project demo: link to be added
 
 ## Solution notes

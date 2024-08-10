@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/cronnoss/bookshop-home-task/docs"
 	"github.com/cronnoss/bookshop-home-task/internal/app/config"
 	"github.com/cronnoss/bookshop-home-task/internal/app/repository/pgrepo"
 	"github.com/cronnoss/bookshop-home-task/internal/app/services"
@@ -20,8 +21,16 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/gorilla/mux"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
+// @title Book Shop API
+// @version 1.0
+// @description API Server for Book Shop Application
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
 	if err := run(); err != nil {
 		log.Fatal(err)
@@ -68,6 +77,7 @@ func run() error {
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("Book Shop API v0.1"))
 	}).Methods("GET")
+	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 
 	router.HandleFunc("/signup", httpServer.SignUp).Methods(http.MethodPost)
 	router.HandleFunc("/signin", httpServer.SignIn).Methods(http.MethodPost)

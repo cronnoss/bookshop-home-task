@@ -7,6 +7,19 @@ import (
 	"github.com/cronnoss/bookshop-home-task/internal/app/common/server"
 )
 
+// @Summary UpdateCart
+// @Security ApiKeyAuth
+// @Tags cart
+// @Description update cart
+// @ID update-cart
+// @Accept  json
+// @Produce  json
+// @Param input body CartRequest true "cart info"
+// @Success 200 {object} CartResponse
+// @Failure 400,404 {object} server.ErrorResponse
+// @Failure 401 {object} server.ErrorResponse
+// @Failure 500 {object} server.ErrorResponse
+// @Router /cart [post]
 func (h HTTPServer) UpdateCart(w http.ResponseWriter, r *http.Request) {
 	user, err := getUserFromContext(r.Context())
 	if err != nil {
@@ -43,6 +56,18 @@ func (h HTTPServer) UpdateCart(w http.ResponseWriter, r *http.Request) {
 	server.RespondOK(response, w, r)
 }
 
+// @Summary Checkout
+// @Security ApiKeyAuth
+// @Tags cart
+// @Description checkout
+// @ID checkout
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} map[string]bool
+// @Failure 400,404 {object} server.ErrorResponse
+// @Failure 401 {object} server.ErrorResponse
+// @Failure 500 {object} server.ErrorResponse
+// @Router /checkout [post]
 func (h HTTPServer) Checkout(w http.ResponseWriter, r *http.Request) {
 	user, err := getUserFromContext(r.Context())
 	if err != nil {

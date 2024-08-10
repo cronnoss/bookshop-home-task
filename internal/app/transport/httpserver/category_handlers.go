@@ -11,7 +11,17 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// GetCategory returns a category by ID.
+// @Summary GetCategory
+// @Tags category
+// @Description get category by ID
+// @ID get-category
+// @Accept  json
+// @Produce  json
+// @Param category_id path int true "category ID"
+// @Success 200 {object} CategoryResponse
+// @Failure 400,404 {object} server.ErrorResponse
+// @Router /category/{category_id} [get]
+// GetCategory returns a category by ID
 func (h HTTPServer) GetCategory(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	categoryID, err := strconv.Atoi(vars["category_id"])
@@ -34,7 +44,20 @@ func (h HTTPServer) GetCategory(w http.ResponseWriter, r *http.Request) {
 	server.RespondOK(response, w, r)
 }
 
-// CreateCategory creates a new category.
+// @Summary CreateCategory
+// @Security ApiKeyAuth
+// @Tags category
+// @Description create category
+// @ID create-category
+// @Accept  json
+// @Produce  json
+// @Param input body CategoryRequest true "category info"
+// @Success 200 {object} CategoryResponse
+// @Failure 400,404 {object} server.ErrorResponse
+// @Failure 401 {object} server.ErrorResponse
+// @Failure 500 {object} server.ErrorResponse
+// @Router /category [post]
+// CreateCategory creates a new category
 func (h HTTPServer) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	var categoryRequest CategoryRequest
 	if err := json.NewDecoder(r.Body).Decode(&categoryRequest); err != nil {
@@ -66,6 +89,20 @@ func (h HTTPServer) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	server.RespondOK(response, w, r)
 }
 
+// @Summary UpdateCategory
+// @Security ApiKeyAuth
+// @Tags category
+// @Description update category by ID
+// @ID update-category
+// @Accept  json
+// @Produce  json
+// @Param category_id path int true "category ID"
+// @Param input body CategoryRequest true "category info"
+// @Success 200 {object} CategoryResponse
+// @Failure 400,404 {object} server.ErrorResponse
+// @Failure 401 {object} server.ErrorResponse
+// @Failure 500 {object} server.ErrorResponse
+// @Router /category/{category_id} [patch]
 func (h HTTPServer) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	categoryID, err := strconv.Atoi(vars["category_id"])
@@ -115,6 +152,19 @@ func (h HTTPServer) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	server.RespondOK(response, w, r)
 }
 
+// @Summary DeleteCategory
+// @Security ApiKeyAuth
+// @Tags category
+// @Description delete category by ID
+// @ID delete-category
+// @Accept  json
+// @Produce  json
+// @Param category_id path int true "category ID"
+// @Success 200 {object} map[string]bool
+// @Failure 400,404 {object} server.ErrorResponse
+// @Failure 401 {object} server.ErrorResponse
+// @Failure 500 {object} server.ErrorResponse
+// @Router /category/{category_id} [delete]
 func (h HTTPServer) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	categoryID, err := strconv.Atoi(vars["category_id"])
@@ -146,6 +196,16 @@ func (h HTTPServer) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	server.RespondOK(map[string]bool{"deleted": true}, w, r)
 }
 
+// @Summary GetCategories
+// @Tags category
+// @Description get all categories
+// @ID get-categories
+// @Accept  json
+// @Produce  json
+// @Success 200 {array} CategoryResponse
+// @Failure 400,404 {object} server.ErrorResponse
+// @Failure 500 {object} server.ErrorResponse
+// @Router /categories [get]
 func (h HTTPServer) GetCategories(w http.ResponseWriter, r *http.Request) {
 	categories, err := h.categoryService.GetCategories(r.Context())
 	if err != nil {

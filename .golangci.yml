@@ -55,6 +55,8 @@ linters-settings:
           - golang.org/x/crypto/bcrypt
           - github.com/google/uuid
           - github.com/testcontainers/testcontainers-go
+          - github.com/cronnoss/bookshop-home-task/docs
+          - github.com/swaggo/http-swagger
 
 issues:
   exclude-rules:
@@ -67,9 +69,20 @@ issues:
     - path: internal/app/transport/httpserver/book_handlers\.go
       linters:
         - dupl
+        - godot
     - path: internal/app/transport/httpserver/category_handlers\.go
       linters:
         - dupl
+        - godot
+    - path: internal/app/transport/httpserver/auth_handlers\.go
+      linters:
+        - godot
+    - path: internal/app/transport/httpserver/cart_handlers\.go
+      linters:
+        - godot
+    - path: cmd/main\.go
+      linters:
+        - godot
 
 linters:
   disable-all: true

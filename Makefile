@@ -63,3 +63,6 @@ debug:
 	DSN="postgres://postgres:password@127.0.0.1:5433/bookshop?sslmode=disable" \
 	MIGRATIONS_PATH="file://./internal/app/migrations" \
 	./app
+
+swag:
+	swag init -g cmd/main.go
