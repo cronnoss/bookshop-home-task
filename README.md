@@ -49,6 +49,8 @@ There are 3 permission levels:
 
 Swagger UI is available at `http://localhost:8080/swagger/index.html`
 
+Swagger UI in DigitalOcean: [link](http://167.172.240.135:8080/swagger/index.html)
+
 Short project demo: link to be added
 
 ## Solution notes
